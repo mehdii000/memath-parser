@@ -21,7 +21,7 @@ namespace lexer {
         std::vector<Token> tokens;
         
         int i = 0;
-        while (i < input.length()) {
+        while (i < static_cast<int>(input.length())) {
             char current = input[i];
 
             if (std::isspace(current)) {
@@ -31,7 +31,7 @@ namespace lexer {
 
             if (std::isdigit(current)) {
                 std::string value;
-                while (i < input.length() && (std::isdigit(input[i]) || input[i] == '.')) {
+                while (i < static_cast<int>(input.length()) && (std::isdigit(input[i]) || input[i] == '.')) {
                     value += input[i++];
                 }
                 tokens.push_back({ TokenType::NUMBER, value });
@@ -40,7 +40,7 @@ namespace lexer {
 
             if (std::isalpha(current)) {
                 std::string value;
-                while (i < input.length() && std::isalnum(input[i])) {
+                while (i < static_cast<int>(input.length()) && std::isalnum(input[i])) {
                     value += input[i++];
                 }
                 tokens.push_back({ TokenType::IDENTIFIER, value });

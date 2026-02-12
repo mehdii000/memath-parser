@@ -1,6 +1,7 @@
 #pragma once
 
 #include <vector>
+#include <memory>
 #include <string>
 #include <unordered_map>
 #include <cstdint> // Preferred over <stdint.h> in C++
@@ -10,6 +11,7 @@ namespace lexer {
     enum class TokenType {
         NUMBER,
         IDENTIFIER,
+        FUNCTION,
         PLUS,
         MINUS,
         MULTIPLY,
@@ -31,6 +33,7 @@ namespace lexer {
     struct Token {
         TokenType type;
         std::string value;
+        std::vector<std::unique_ptr<Token>> sub_tokens = {};
     };
 
     std::vector<Token> tokenize(const std::string& input);

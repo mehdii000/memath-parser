@@ -1,5 +1,5 @@
 # Compiler and Flags
-CXX      = g++-14
+CXX      = g++
 CXXFLAGS = -Wall -Wextra -std=c++23 -Iincludes
 TARGET   = memath
 

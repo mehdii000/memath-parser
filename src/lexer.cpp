@@ -80,6 +80,27 @@ namespace lexer {
                 while (i < static_cast<int>(input.length()) && std::isalnum(input[i])) {
                     value += input[i++];
                 }
+
+                // Checking if its a function instead of just a plain identifier
+                if (i < static_cast<int>(input.length()) && input[i] == '(') {
+                    std::string data;
+                    int balance = 0;
+                    while (i < static_cast<int>(input.length())) {
+                        if (input[i] == '(') balance++;
+                        if (input[i] == ')') balance--;
+                        data += input[i++];
+                        if (balance == 0) break;
+                    }
+                    std::vector<Token> raw_sub_tokens = tokenize(data);
+                    preprocess(raw_sub_tokens); // by ref
+                    std::vector<std::unique_ptr<Token>> sub_tokens;
+                    for (auto& t : raw_sub_tokens) {
+                        sub_tokens.push_back(std::make_unique<Token>(std::move(t)));
+                    }
+                    tokens.push_back({ TokenType::FUNCTION, value, std::move(sub_tokens) });
+                    continue;
+                }
+
                 tokens.push_back({ TokenType::IDENTIFIER, value });
                 continue;
             }

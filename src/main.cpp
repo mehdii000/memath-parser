@@ -14,11 +14,15 @@ int main(int argc, char const *argv[]) {
     lexer::preprocess(tokens); // by ref
     std::print("Grouped: ");    
     for (auto& token : tokens) {
-        std::print("{}",
-        token.type == lexer::TokenType::LPAREN ?
-        (" " + token.value)
-        :
-        ( token.type == lexer::TokenType::RPAREN ? (token.value + " ") : token.value ));
+        if (token.type == lexer::TokenType::FUNCTION) {
+            std::print(" {}(", token.value);
+            for (auto& subtoken : token.sub_tokens) {
+                std::print("{}", subtoken->value);
+            }
+            std::print(") ");
+        } else {
+            std::print("{}", token.value);
+        }
     }
     std::print("\n");
 

@@ -12,11 +12,17 @@ int main(int argc, char const *argv[]) {
 
     std::vector<lexer::Token> tokens { lexer::tokenize(input) };
     lexer::preprocess(tokens); // by ref
-    std::print("Raw: ");    
+    std::print("Grouped: ");    
     for (auto& token : tokens) {
-        std::print("{}", token.value);
+        std::print("{}",
+        token.type == lexer::TokenType::LPAREN ?
+        (" " + token.value)
+        :
+        ( token.type == lexer::TokenType::RPAREN ? (token.value + " ") : token.value ));
     }
     std::print("\n");
+
+
 
     return 0;
 }

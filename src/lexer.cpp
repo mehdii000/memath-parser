@@ -1,150 +1,59 @@
 #include "lexer.hpp"
+#include <vector>
+#include <cctype>
 
-namespace lexer {
+std::vector<Token> Lexer::tokenize() {
+    std::vector<Token> tokens;
 
-    namespace {
-        int getPrecedence(TokenType type) {
-            auto it = operationPriority.find(type);
-            return (it != operationPriority.end()) ? it->second : 2;
-        }
-        
-        bool isArithOp(TokenType type) {
-            return type == TokenType::DIVIDE || type == TokenType::MULTIPLY || type == TokenType::PLUS || type == TokenType::MINUS;
-        }
+    while (!isAtEnd()) {
+        start = current; // Reset start to the beginning of the next token
+        char c = peek();
 
-        size_t parseLeft(const std::vector<Token>& tokens, size_t index) {
-            // If it's not a parenthesis, the boundary is just this token
-            if (tokens.at(index).type != TokenType::RPAREN) return index;
+        switch (c) {
+            // Single character tokens
+            case '(': tokens.push_back({TokenType::LPAREN, source.substr(start, 1)}); current++; break;
+            case ')': tokens.push_back({TokenType::RPAREN, source.substr(start, 1)}); current++; break;
+            case '+': tokens.push_back({TokenType::PLUS,   source.substr(start, 1)}); current++; break;
+            case '-': tokens.push_back({TokenType::MINUS,  source.substr(start, 1)}); current++; break;
+            case '*': tokens.push_back({TokenType::STAR,   source.substr(start, 1)}); current++; break;
+            case '/': tokens.push_back({TokenType::SLASH,  source.substr(start, 1)}); current++; break;
+            case '=': tokens.push_back({TokenType::EQUAL,  source.substr(start, 1)}); current++; break;
+            
+            // Skip whitespace
+            case ' ':
+            case '\r':
+            case '\t':
+            case '\n':
+                current++;
+                break;
 
-            int balance = 0;
-            for (int i = static_cast<int>(index); i >= 0; --i) {
-                if (tokens.at(i).type == TokenType::RPAREN) balance++;
-                if (tokens.at(i).type == TokenType::LPAREN) balance--;
-                if (balance == 0) return static_cast<size_t>(i);
-            }
-            return 0;
-        }
-
-        size_t parseRight(const std::vector<Token>& tokens, size_t index) {
-            if (tokens.at(index).type != TokenType::LPAREN) return index;
-
-            int balance = 0;
-            for (size_t i = index; i < tokens.size(); ++i) {
-                if (tokens.at(i).type == TokenType::LPAREN) balance++;
-                if (tokens.at(i).type == TokenType::RPAREN) balance--;
-                if (balance == 0) return i;
-            }
-            return tokens.size() - 1;
-        }
-
-    }
-
-    std::string get_tokttype(TokenType type) {
-        switch (type) {
-            case TokenType::NUMBER:     return "NUMBER";
-            case TokenType::IDENTIFIER: return "IDENTIFIER";
-            case TokenType::PLUS:       return "PLUS";
-            case TokenType::MINUS:      return "MINUS";
-            case TokenType::MULTIPLY:   return "MULTIPLY";
-            case TokenType::DIVIDE:     return "DIVIDE";
-            case TokenType::LPAREN:     return "LPAREN";
-            case TokenType::RPAREN:     return "RPAREN";
-            case TokenType::EQUAL:      return "EQUAL";
-            default:                    return "UNKNOWN";
-        }
-    }
-
-    std::vector<Token> tokenize(const std::string& input) {
-        std::vector<Token> tokens;
-        
-        int i = 0;
-        while (i < static_cast<int>(input.length())) {
-            char current = input[i];
-
-            if (std::isspace(current)) {
-                i++;
-                continue;
-            }
-
-            if (std::isdigit(current)) {
-                std::string value;
-                while (i < static_cast<int>(input.length()) && (std::isdigit(input[i]) || input[i] == '.')) {
-                    value += input[i++];
-                }
-                tokens.push_back({ TokenType::NUMBER, value });
-                continue;
-            }
-
-            if (std::isalpha(current)) {
-                std::string value;
-                while (i < static_cast<int>(input.length()) && std::isalnum(input[i])) {
-                    value += input[i++];
-                }
-
-                // Checking if its a function instead of just a plain identifier
-                if (i < static_cast<int>(input.length()) && input[i] == '(') {
-                    std::string data;
-                    int balance = 0;
-                    while (i < static_cast<int>(input.length())) {
-                        if (input[i] == '(') balance++;
-                        if (input[i] == ')') balance--;
-                        data += input[i++];
-                        if (balance == 0) break;
+            default:
+                if (std::isdigit(c)) {
+                    // Handle numbers (including decimals for math)
+                    while (!isAtEnd() && std::isdigit(peek())) {
+                        current++;
                     }
-                    std::vector<Token> raw_sub_tokens = tokenize(data);
-                    preprocess(raw_sub_tokens); // by ref
-                    std::vector<std::unique_ptr<Token>> sub_tokens;
-                    for (auto& t : raw_sub_tokens) {
-                        sub_tokens.push_back(std::make_unique<Token>(std::move(t)));
+                    // Optional: handle decimal point
+                    if (peek() == '.') {
+                        current++;
+                        while (!isAtEnd() && std::isdigit(peek())) current++;
                     }
-                    tokens.push_back({ TokenType::FUNCTION, value, std::move(sub_tokens) });
-                    continue;
-                }
-
-                tokens.push_back({ TokenType::IDENTIFIER, value });
-                continue;
-            }
-
-            switch (current) {
-                case '+': tokens.push_back({ TokenType::PLUS, "+" });       break;
-                case '-': tokens.push_back({ TokenType::MINUS, "-" });      break;
-                case '*': tokens.push_back({ TokenType::MULTIPLY, "*" });   break;
-                case '/': tokens.push_back({ TokenType::DIVIDE, "/" });     break;
-                case '(': tokens.push_back({ TokenType::LPAREN, "(" });     break;
-                case ')': tokens.push_back({ TokenType::RPAREN, ")" });     break;
-                case '=': tokens.push_back({ TokenType::EQUAL, "="});       break;
-                default: break; 
-            }
-            i++;
-        }
-
-        return tokens;
-    }
-
-    void preprocess(std::vector<Token>& tokens) {
-        for (int prec = 2; prec >= 1; --prec) {
-            for (size_t i = 0; i < tokens.size(); ++i) {
-                if (isArithOp(tokens[i].type) && getPrecedence(tokens[i].type) == prec) {
-                    
-                    size_t lb = parseLeft(tokens, i - 1);
-                    size_t rb = parseRight(tokens, i + 1);
-
-                    // OPTIMIZATION: Check if this range is already wrapped in parens
-                    if (lb > 0 && rb < tokens.size() - 1) {
-                        if (tokens[lb-1].type == TokenType::LPAREN && 
-                            tokens[rb+1].type == TokenType::RPAREN) {
-                            // skipping
-                            continue; 
-                        }
+                    tokens.push_back({TokenType::NUMBER, source.substr(start, current - start)});
+                } 
+                else if (std::isalpha(c)) {
+                    // Handle variables/functions (x, y, sin, etc)
+                    while (!isAtEnd() && std::isalnum(peek())) {
+                        current++;
                     }
-
-                    tokens.insert(tokens.begin() + rb + 1, { TokenType::RPAREN, ")" });
-                    tokens.insert(tokens.begin() + lb, { TokenType::LPAREN, "(" });
-
-                    i += 2; 
+                    tokens.push_back({TokenType::LITERAL, source.substr(start, current - start)});
                 }
-            }
+                else {
+                    // Ignore or handle unknown characters
+                    current++; 
+                }
+                break;
         }
     }
-
+    
+    return tokens;
 }

@@ -1,42 +1,34 @@
 #pragma once
 
+#include <string_view>
 #include <vector>
-#include <memory>
-#include <string>
-#include <unordered_map>
-#include <cstdint> // Preferred over <stdint.h> in C++
+#include <cctype> // for isdigit, isalpha
 
-namespace lexer {
+enum class TokenType {
+    NUMBER,   // 1, 3.14
+    LITERAL, // x, y, sin, pi
+    PLUS, MINUS, STAR, SLASH, PERCENT,
+    LPAREN, RPAREN, EQUAL,
+};
 
-    enum class TokenType {
-        NUMBER,
-        IDENTIFIER,
-        FUNCTION,
-        PLUS,
-        MINUS,
-        MULTIPLY,
-        DIVIDE,
-        LPAREN,
-        RPAREN,
-        EQUAL
-    };
+struct Token {
+    TokenType type;
+    std::string_view value;
+};
 
-    // Higher value = Higher precedence (processed first)
-    const std::unordered_map<TokenType, uint8_t> operationPriority =
-    {
-        {TokenType::MULTIPLY, 2},
-        {TokenType::DIVIDE,   2},
-        {TokenType::PLUS,     1},
-        {TokenType::MINUS,    1}
-    };
+struct Lexer {
+    std::string_view source;
+    size_t start = 0;
+    size_t current = 0;
 
-    struct Token {
-        TokenType type;
-        std::string value;
-        std::vector<std::unique_ptr<Token>> sub_tokens = {};
-    };
+    Lexer(std::string_view source) : source(source) {};
 
-    std::vector<Token> tokenize(const std::string& input);
-    void preprocess(std::vector<Token>& tokens);
-    std::string get_tokttype(TokenType type);
-}
+    // The main engine
+    std::vector<Token> tokenize();
+
+private:
+    // Core Navigation
+    bool isAtEnd() const { return current >= source.length(); }
+    char advance() { return source[current++]; }
+    char peek() const { return isAtEnd() ? '\0' : source[current]; }
+};

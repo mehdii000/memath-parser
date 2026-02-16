@@ -29,6 +29,8 @@ struct Lexer {
 private:
     // Core Navigation
     bool isAtEnd() const { return current >= source.length(); }
-    char advance() { return source[current++]; }
+    char advance() {
+        return isAtEnd() ? '\0' : source[current++];
+    }
     char peek() const { return isAtEnd() ? '\0' : source[current]; }
 };

@@ -1,7 +1,6 @@
 #include "parser.hpp"
 #include <stdexcept>
 
-// Entry point: Handles the lowest precedence (Equality)
 std::unique_ptr<Node> Parser::parse() {
     return expression();
 }

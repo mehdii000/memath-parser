@@ -34,6 +34,17 @@ void printRecursively(const Node* node, int depth = 0) {
     }
 }
 
+void leafsNmbrRecur(const Node* node, size_t& nmbr) {
+    if (!node) return;
+    if (node->children.empty()) {
+        nmbr++;
+    } else {
+        for (const auto& child : node->children) {
+            leafsNmbrRecur(child.get(), nmbr);
+        }
+    }
+}
+
 int main(int argc, char const *argv[]) {
     if (argc < 2) fatal::exit("Invalid argument <input>. memath \"<input>\"");
     std::string input{ argv[1] };
@@ -44,7 +55,9 @@ int main(int argc, char const *argv[]) {
     Parser parser = Parser(tokens);
     std::unique_ptr<Node> astRoot = parser.parse();
 
-    printRecursively(astRoot.get());
+    size_t leafs = 0;
+    leafsNmbrRecur(astRoot.get(), leafs); // leafs by ref
+    std::println("Number of leaf nodes: {}", leafs);
 
     return 0;
 }

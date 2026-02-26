@@ -62,5 +62,6 @@ private:
     bool isAtEnd() const { return current >= tokens.size(); }
     const Token& advance() {
         if (!isAtEnd()) return tokens[current++];
+        return tokens[current - 1];
     }
 };
